@@ -125,6 +125,11 @@ def cmd_dig(cmdargs: argparse.Namespace) -> None:
     b4.dig.main(cmdargs)
 
 
+def cmd_review(cmdargs: argparse.Namespace) -> None:
+    import b4.review
+    b4.review.main(cmdargs)
+
+
 class ConfigOption(argparse.Action):
     """Action class for storing key=value arguments in a dict."""
     def __call__(self, parser: argparse.ArgumentParser,
@@ -418,6 +423,36 @@ def setup_parser() -> argparse.ArgumentParser:
     sp_dig_eg.add_argument('-w', '--who', action='store_true', default=False,
                            help='Show list of recipients in the original message')
     sp_dig.set_defaults(func=cmd_dig)
+
+    # b4 review
+    sp_review = subparsers.add_parser('review', help='AI-assisted patch review')
+    sp_review.add_argument('msgid_or_commit', nargs='?',
+                           help='Message ID, commit-ish, or commit range to review')
+    sp_review.add_argument('--provider', choices=['ollama', 'anthropic', 'gemini'],
+                           default='ollama',
+                           help='LLM provider to use (default: ollama)')
+    sp_review.add_argument('-i', '--interactive', action='store_true', default=False,
+                           help='Start interactive review session')
+    sp_review.add_argument('--prompts-dir', default=None,
+                           help='Path to review-prompts directory')
+    sp_review.add_argument('--subsystems', default=None,
+                           help='Comma-separated list of subsystems to focus on')
+    sp_review.add_argument('--patterns', default=None,
+                           help='Comma-separated list of pattern categories (e.g., CL,EH,RM)')
+    sp_review.add_argument('--output', choices=['inline', 'markdown', 'json'],
+                           default='inline',
+                           help='Output format (default: inline)')
+    sp_review.add_argument('-o', '--output-file', dest='outfile', default=None,
+                           help='Write output to this file (default: review-inline.txt for inline format)')
+    sp_review.add_argument('--batch', action='store_true', default=False,
+                           help='Review multiple patches in a commit range')
+    sp_review.add_argument('--debug', action='store_true', default=False,
+                           help='Enable debug logging')
+    sp_review.add_argument('--no-cache', dest='nocache', action='store_true', default=False,
+                           help='Bypass LLM response cache')
+    sp_review.add_argument('-m', '--use-local-mbox', dest='localmbox', default=None,
+                           help='Review from local mbox file instead of lore')
+    sp_review.set_defaults(func=cmd_review)
 
     return parser
 
