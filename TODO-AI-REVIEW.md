@@ -11,50 +11,51 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
 - [x] Create feature branch `ai-review`
 - [x] Write design document (DESIGN-AI-REVIEW.md)
 - [x] Create TODO tracking document
-- [ ] Create module directories
-  - [ ] `src/b4/llm/` - LLM provider implementations
-  - [ ] `tests/test_review/` - Review-specific tests
-- [ ] Update `pyproject.toml` with new dependencies
-  - [ ] Add `mcp>=1.0.0` to dependencies
-  - [ ] Add `httpx>=0.24.0` to dependencies
-  - [ ] Add optional dependencies: `anthropic`, `google-generativeai`, `prompt_toolkit`
+- [x] Create module directories
+  - [x] `src/b4/llm/` - LLM provider implementations
+  - [x] `tests/test_review/` - Review-specific tests
+- [x] Update `pyproject.toml` with new dependencies
+  - [x] Add `mcp>=1.0.0` to dependencies
+  - [x] Add `httpx>=0.24.0` to dependencies
+  - [x] Add optional dependencies: `anthropic`, `google-generativeai`, `prompt_toolkit`
+  - [x] Add `.semcode.db` to `.gitignore`
 
 #### 1.2 LLM Provider Base (src/b4/llm/base.py)
-- [ ] Define `LLMProvider` abstract base class
-  - [ ] Method: `__init__(config: dict)`
-  - [ ] Method: `generate(messages: list, tools: list) -> dict`
-  - [ ] Method: `stream_generate(messages: list, tools: list) -> Iterator`
-  - [ ] Method: `supports_tools() -> bool`
-  - [ ] Property: `name: str`
-  - [ ] Property: `model: str`
-- [ ] Define message format dataclasses
-  - [ ] `Message(role: str, content: str)`
-  - [ ] `ToolCall(id: str, name: str, arguments: dict)`
-  - [ ] `ToolResult(id: str, result: str)`
-- [ ] Define response format
-  - [ ] `LLMResponse(content: str, tool_calls: list, finish_reason: str)`
+- [x] Define `LLMProvider` abstract base class
+  - [x] Method: `__init__(config: dict)`
+  - [x] Method: `generate(messages: list, tools: list) -> dict`
+  - [x] Method: `stream_generate(messages: list, tools: list) -> Iterator`
+  - [x] Method: `supports_tools() -> bool`
+  - [x] Property: `name: str`
+  - [x] Property: `model: str`
+- [x] Define message format dataclasses
+  - [x] `Message(role: str, content: str)`
+  - [x] `ToolCall(id: str, name: str, arguments: dict)`
+  - [x] `ToolResult(id: str, result: str)`
+- [x] Define response format
+  - [x] `LLMResponse(content: str, tool_calls: list, finish_reason: str)`
 - [ ] Write unit tests for base classes
 
 #### 1.3 Ollama Provider (src/b4/llm/ollama.py)
-- [ ] Implement `OllamaProvider(LLMProvider)`
-- [ ] HTTP client setup (using httpx)
-  - [ ] Configure base URL from config (default: http://localhost:11434)
-  - [ ] Set timeouts (default: 300s for generation)
-  - [ ] Implement retry logic with exponential backoff
-- [ ] Implement `generate()` method
-  - [ ] Format messages for Ollama API
-  - [ ] Convert MCP tools to Ollama function calling format
-  - [ ] POST to `/api/chat` endpoint
-  - [ ] Parse response and extract tool calls
-  - [ ] Handle errors (connection, timeout, model not found)
-- [ ] Implement `stream_generate()` method
-  - [ ] Stream responses from Ollama
-  - [ ] Yield chunks as they arrive
-  - [ ] Handle streaming errors
-- [ ] Configuration loading
-  - [ ] Read `b4-review-ollama.*` from git config
-  - [ ] Support environment variables (OLLAMA_URL, OLLAMA_MODEL)
-  - [ ] Default model: qwen2.5-coder:7b
+- [x] Implement `OllamaProvider(LLMProvider)`
+- [x] HTTP client setup (using httpx)
+  - [x] Configure base URL from config (default: http://localhost:11434)
+  - [x] Set timeouts (default: 300s for generation)
+  - [x] Implement retry logic with exponential backoff
+- [x] Implement `generate()` method
+  - [x] Format messages for Ollama API
+  - [x] Convert MCP tools to Ollama function calling format
+  - [x] POST to `/api/chat` endpoint
+  - [x] Parse response and extract tool calls
+  - [x] Handle errors (connection, timeout, model not found)
+- [x] Implement `stream_generate()` method
+  - [x] Stream responses from Ollama
+  - [x] Yield chunks as they arrive
+  - [x] Handle streaming errors
+- [x] Configuration loading
+  - [x] Read `b4-review-ollama.*` from git config
+  - [x] Support environment variables (OLLAMA_URL, OLLAMA_MODEL)
+  - [x] Default model: qwen2.5-coder:7b
 - [ ] Write unit tests
   - [ ] Test connection to Ollama
   - [ ] Test message formatting
@@ -63,113 +64,113 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
   - [ ] Mock Ollama API for tests
 
 #### 1.4 Command Registration (src/b4/command.py)
-- [ ] Import review module: `from . import review`
-- [ ] Add `review` subparser
-  - [ ] Add positional argument: `msgid_or_commit`
-  - [ ] Add `--provider` option (choices: ollama, anthropic, gemini)
-  - [ ] Add `--interactive/-i` flag
-  - [ ] Add `--prompts-dir` option
-  - [ ] Add `--subsystems` option
-  - [ ] Add `--patterns` option
-  - [ ] Add `--output` option (choices: inline, markdown, json)
-  - [ ] Add `-o/--output-file` option
-  - [ ] Add `--batch` flag
-  - [ ] Add `--debug` flag
-  - [ ] Add `--no-cache` flag
-- [ ] Set defaults function: `sp_review.set_defaults(func=review.cmd_review)`
-- [ ] Test basic command parsing
+- [x] Import review module: `from . import review`
+- [x] Add `review` subparser
+  - [x] Add positional argument: `msgid_or_commit`
+  - [x] Add `--provider` option (choices: ollama, anthropic, gemini)
+  - [x] Add `--interactive/-i` flag
+  - [x] Add `--prompts-dir` option
+  - [x] Add `--subsystems` option
+  - [x] Add `--patterns` option
+  - [x] Add `--output` option (choices: inline, markdown, json)
+  - [x] Add `-o/--output-file` option
+  - [x] Add `--batch` flag
+  - [x] Add `--debug` flag
+  - [x] Add `--no-cache` flag
+- [x] Set defaults function: `sp_review.set_defaults(func=review.cmd_review)`
+- [x] Test basic command parsing
 
 #### 1.5 Review Module Skeleton (src/b4/review.py)
-- [ ] Create module structure
-- [ ] Import dependencies
-  - [ ] `import b4` - existing b4 functionality
-  - [ ] `from . import llm` - LLM providers
-  - [ ] Standard library imports
-- [ ] Define `cmd_review(cmdargs)` entry point
-  - [ ] Parse arguments
-  - [ ] Determine input type (msgid, commit, range, mbox)
-  - [ ] Call appropriate handler
-  - [ ] Handle errors and logging
-- [ ] Define basic workflow functions (stubs for now)
-  - [ ] `review_from_msgid(msgid, config) -> ReviewResult`
-  - [ ] `review_from_commit(commit, config) -> ReviewResult`
-  - [ ] `review_from_range(commit_range, config) -> list[ReviewResult]`
+- [x] Create module structure
+- [x] Import dependencies
+  - [x] `import b4` - existing b4 functionality
+  - [x] `from . import llm` - LLM providers
+  - [x] Standard library imports
+- [x] Define `cmd_review(cmdargs)` entry point (renamed to `main`)
+  - [x] Parse arguments
+  - [x] Determine input type (msgid, commit, range, mbox)
+  - [x] Call appropriate handler
+  - [x] Handle errors and logging
+- [x] Define basic workflow functions (stubs for now)
+  - [x] `review_from_msgid(msgid, config) -> ReviewResult`
+  - [x] `review_from_commit(commit, config) -> ReviewResult`
+  - [x] `review_from_range(commit_range, config) -> list[ReviewResult]`
   - [ ] `review_interactive(patch, config) -> None`
-- [ ] Define `ReviewResult` dataclass
-  - [ ] `patch_info: dict` - patch metadata
-  - [ ] `regressions_found: int`
-  - [ ] `patterns_triggered: list[str]`
-  - [ ] `review_text: str`
-  - [ ] `tokens_used: int`
-  - [ ] `analysis_time: float`
-- [ ] Write basic integration test
-  - [ ] Test `b4 review --help` works
-  - [ ] Test command routing to review module
+- [x] Define `ReviewResult` dataclass
+  - [x] `patch_info: dict` - patch metadata
+  - [x] `regressions_found: int`
+  - [x] `patterns_triggered: list[str]`
+  - [x] `review_text: str`
+  - [x] `tokens_used: int`
+  - [x] `analysis_time: float`
+- [x] Write basic integration test
+  - [x] Test `b4 review --help` works
+  - [x] Test command routing to review module
 
 ### Week 2: MCP Integration
 
 #### 2.1 MCP Client Implementation (src/b4/mcp_client.py)
-- [ ] Install Python MCP SDK
-  - [ ] Add to requirements: `mcp>=1.0.0`
-  - [ ] Test basic MCP SDK functionality
-- [ ] Implement `SemcodeMCPClient` class
-  - [ ] Method: `__init__(semcode_binary: str, kernel_dir: str)`
-  - [ ] Method: `connect() -> None` - Start semcode-mcp subprocess
-  - [ ] Method: `disconnect() -> None` - Clean shutdown
-  - [ ] Method: `discover_tools() -> list[ToolSchema]` - Get available tools
-  - [ ] Method: `invoke_tool(name: str, args: dict) -> dict` - Call a tool
-  - [ ] Context manager support (`__enter__`, `__exit__`)
-- [ ] Tool schema parsing
-  - [ ] Parse MCP tool definitions from semcode-mcp
-  - [ ] Convert to standardized format
-  - [ ] Cache tool schemas
-- [ ] Subprocess management
-  - [ ] Start semcode-mcp with stdio transport
-  - [ ] Handle process lifecycle
-  - [ ] Capture stderr for debugging
-  - [ ] Graceful shutdown on errors
-- [ ] Error handling
-  - [ ] Connection failures
-  - [ ] Tool invocation errors
-  - [ ] Timeout handling
-  - [ ] Process crashes
-- [ ] Write unit tests
-  - [ ] Test connection to semcode-mcp
-  - [ ] Test tool discovery
-  - [ ] Test tool invocation
-  - [ ] Test error scenarios
-  - [ ] Mock semcode-mcp for tests
+- [x] Install Python MCP SDK
+  - [x] Add to requirements: `mcp>=1.0.0`
+  - [x] Test basic MCP SDK functionality
+- [x] Implement `SemcodeMCPClient` class
+  - [x] Method: `__init__(semcode_binary: str, kernel_dir: str)`
+  - [x] Method: `connect() -> None` - Start semcode-mcp subprocess
+  - [x] Method: `disconnect() -> None` - Clean shutdown
+  - [x] Method: `discover_tools() -> list[ToolSchema]` - Get available tools
+  - [x] Method: `invoke_tool(name: str, args: dict) -> dict` - Call a tool
+  - [x] Context manager support (`__enter__`, `__exit__`)
+- [x] Tool schema parsing
+  - [x] Parse MCP tool definitions from semcode-mcp
+  - [x] Convert to standardized format
+  - [x] Cache tool schemas
+- [x] Subprocess management
+  - [x] Start semcode-mcp with stdio transport
+  - [x] Handle process lifecycle
+  - [x] Capture stderr for debugging
+  - [x] Graceful shutdown on errors
+- [x] Error handling
+  - [x] Connection failures
+  - [x] Tool invocation errors
+  - [x] Timeout handling
+  - [x] Process crashes
+- [x] Write unit tests
+  - [x] Test connection to semcode-mcp
+  - [x] Test tool discovery
+  - [x] Test tool invocation
+  - [x] Test error scenarios
+  - [x] Mock semcode-mcp for tests
 
 #### 2.2 Tool Bridge (src/b4/tool_bridge.py)
-- [ ] Implement `convert_mcp_to_provider_tools(mcp_tools, provider_type)`
-  - [ ] Convert MCP schemas to Ollama function format
-  - [ ] Convert MCP schemas to Anthropic tool format (future)
-  - [ ] Convert MCP schemas to Gemini function format (future)
-- [ ] Implement `execute_tool_call(tool_call, mcp_client) -> ToolResult`
-  - [ ] Parse tool call from LLM
-  - [ ] Invoke via MCP client
-  - [ ] Format result for LLM
-  - [ ] Handle errors
-- [ ] Write unit tests
-  - [ ] Test schema conversion for each provider
-  - [ ] Test tool execution
-  - [ ] Test error handling
+- [x] Implement `convert_mcp_to_provider_tools(mcp_tools, provider_type)`
+  - [x] Convert MCP schemas to Ollama function format
+  - [x] Convert MCP schemas to Anthropic tool format
+  - [x] Convert MCP schemas to Gemini function format
+- [x] Implement `execute_tool_call(tool_call, mcp_client) -> ToolResult`
+  - [x] Parse tool call from LLM
+  - [x] Invoke via MCP client
+  - [x] Format result for LLM
+  - [x] Handle errors
+- [x] Write unit tests
+  - [x] Test schema conversion for each provider
+  - [x] Test tool execution
+  - [x] Test error handling
 
 #### 2.3 Integration Testing
-- [ ] Create integration test with real semcode-mcp
-  - [ ] Start semcode-mcp subprocess
-  - [ ] Discover tools
-  - [ ] Invoke `find_function` tool
-  - [ ] Verify result format
-  - [ ] Clean shutdown
-- [ ] Test LLM + MCP workflow
-  - [ ] Initialize Ollama provider
-  - [ ] Initialize MCP client
-  - [ ] Convert MCP tools to Ollama format
-  - [ ] Send prompt with tools to LLM
-  - [ ] Execute tool calls
-  - [ ] Return results to LLM
-  - [ ] Verify end-to-end flow
+- [x] Create integration test with real semcode-mcp
+  - [x] Start semcode-mcp subprocess
+  - [x] Discover tools
+  - [x] Invoke `find_function` tool
+  - [x] Verify result format
+  - [x] Clean shutdown
+- [x] Test LLM + MCP workflow
+  - [x] Initialize Ollama provider
+  - [x] Initialize MCP client
+  - [x] Convert MCP tools to Ollama format
+  - [x] Send prompt with tools to LLM
+  - [x] Execute tool calls
+  - [x] Return results to LLM
+  - [x] Verify end-to-end flow (with mocks)
 
 ### Week 3: Review Protocol
 
@@ -528,9 +529,11 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
 ## Current Status
 
 **Branch**: `ai-review`
-**Latest Commit**: `c5d2208` - docs: Add AI review feature design document
-**Phase**: 1 (Foundation)
+**Latest Commit**: `abc4098` - review: Add command registration and module skeleton
+**Phase**: 1 (Week 2 - MCP Integration COMPLETE)
 **Started**: 2025-11-18
+**Week 1 Completed**: 2025-11-18
+**Week 2 Completed**: 2025-11-18
 
 ## Notes
 
