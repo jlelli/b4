@@ -27,6 +27,8 @@ dependencies = [
     "git-filter-repo>=2.30,<3.0",
     "dkimpy>=1.0,<2.0",
     "patatt>=0.6,<2.0",
+    "mcp>=1.0.0",
+    "httpx>=0.24.0",
 ]
 
 [dependency-groups]
@@ -41,6 +43,11 @@ dev = [
 [project.optional-dependencies]
 completion = [
     "shtab>=1.7",
+]
+review = [
+    "anthropic>=0.18.0",
+    "google-generativeai",
+    "prompt_toolkit>=3.0.0",
 ]
 
 [tool.setuptools.packages.find]

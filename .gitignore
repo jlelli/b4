@@ -19,3 +19,4 @@ __pycache__
 qodana.yaml
 *.ipynb
 pytest.log
+.semcode.db
