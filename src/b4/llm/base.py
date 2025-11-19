@@ -13,12 +13,19 @@ from typing import Any, Dict, Iterator, List, Optional
 @dataclass
 class Message:
     """Represents a single message in a conversation."""
-    role: str  # 'system', 'user', 'assistant'
+    role: str  # 'system', 'user', 'assistant', 'tool'
     content: str
+    tool_calls: Optional[List['ToolCall']] = None  # For assistant messages with tool calls
+    tool_call_id: Optional[str] = None  # For tool result messages
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format."""
-        return {'role': self.role, 'content': self.content}
+        result: Dict[str, Any] = {'role': self.role, 'content': self.content}
+        if self.tool_calls:
+            result['tool_calls'] = [tc.to_dict() for tc in self.tool_calls]
+        if self.tool_call_id:
+            result['tool_call_id'] = self.tool_call_id
+        return result
 
 
 @dataclass

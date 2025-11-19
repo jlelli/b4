@@ -238,6 +238,23 @@ class OllamaProvider(LLMProvider):
                     name=tc['function']['name'],
                     arguments=tc['function'].get('arguments', {})
                 ))
+        elif content and content.strip().startswith('{'):
+            # Fallback: Some models return tool calls as JSON in content
+            # instead of using structured tool_calls format
+            try:
+                tool_call_json = json.loads(content.strip())
+                if 'name' in tool_call_json and 'arguments' in tool_call_json:
+                    tool_calls.append(ToolCall(
+                        id=f"call_0",
+                        name=tool_call_json['name'],
+                        arguments=tool_call_json['arguments']
+                    ))
+                    # Clear content since it was a tool call, not text
+                    content = ''
+                    logger.debug(f'Parsed tool call from JSON content: {tool_call_json["name"]}')
+            except (json.JSONDecodeError, KeyError) as e:
+                # Not a valid tool call JSON, treat as regular content
+                logger.debug(f'Content looks like JSON but failed to parse as tool call: {e}')
 
         # Determine finish reason
         finish_reason = 'stop'
