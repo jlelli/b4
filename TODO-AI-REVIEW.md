@@ -178,60 +178,60 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
 ### Week 3: Review Protocol
 
 #### 3.1 Review Prompts Loader (src/b4/review_prompts.py)
-- [ ] Implement `ReviewPromptsLoader` class
-  - [ ] Method: `__init__(prompts_dir: str)`
-  - [ ] Method: `load_core_protocol() -> str`
-  - [ ] Method: `load_technical_patterns() -> str`
-  - [ ] Method: `detect_subsystems(patch_diff: str) -> list[str]`
-  - [ ] Method: `load_subsystem_prompts(subsystems: list) -> dict`
-  - [ ] Method: `load_patterns(pattern_ids: list) -> dict`
-- [ ] Configuration handling
-  - [ ] Check `b4.review-prompts-dir` config
-  - [ ] Check `REVIEW_PROMPTS_DIR` environment variable
-  - [ ] Default to `~/Work/kernel/review-prompts`
-  - [ ] Validate directory exists
-- [ ] Subsystem detection logic
-  - [ ] Parse review-core.md subsystem mapping
-  - [ ] Match file paths in diff
-  - [ ] Match function names in diff
-  - [ ] Return list of detected subsystems
-- [ ] File loading
-  - [ ] Read markdown files
-  - [ ] Handle missing files gracefully
-  - [ ] Cache loaded prompts
-- [ ] Write unit tests
-  - [ ] Test file loading
-  - [ ] Test subsystem detection
-  - [ ] Test error handling for missing files
+- [x] Implement `ReviewPromptsLoader` class
+  - [x] Method: `__init__(prompts_dir: str)`
+  - [x] Method: `load_core_protocol() -> str`
+  - [x] Method: `load_technical_patterns() -> str`
+  - [x] Method: `detect_subsystems(patch_diff: str) -> list[str]`
+  - [x] Method: `load_subsystem_prompts(subsystems: list) -> dict`
+  - [x] Method: `load_patterns(pattern_ids: list) -> dict`
+- [x] Configuration handling
+  - [x] Check `b4.review-prompts-dir` config
+  - [x] Check `REVIEW_PROMPTS_DIR` environment variable
+  - [x] Default to `~/Work/kernel/review-prompts`
+  - [x] Validate directory exists
+- [x] Subsystem detection logic
+  - [x] Parse review-core.md subsystem mapping
+  - [x] Match file paths in diff
+  - [x] Match function names in diff
+  - [x] Return list of detected subsystems
+- [x] File loading
+  - [x] Read markdown files
+  - [x] Handle missing files gracefully
+  - [x] Cache loaded prompts
+- [x] Write unit tests
+  - [x] Test file loading
+  - [x] Test subsystem detection
+  - [x] Test error handling for missing files
 
 #### 3.2 Review Engine Core (src/b4/review.py - expand)
-- [ ] Implement `ReviewEngine` class
-  - [ ] Method: `__init__(provider, mcp_client, prompts_loader)`
-  - [ ] Method: `review_patch(patch_diff, metadata) -> ReviewResult`
-  - [ ] Method: `build_system_prompt() -> str`
-  - [ ] Method: `build_user_prompt(patch_diff) -> str`
-  - [ ] Method: `execute_review_protocol() -> ReviewResult`
-  - [ ] Method: `parse_review_response(llm_response) -> ReviewResult`
-- [ ] System prompt construction
-  - [ ] Load review-core.md
-  - [ ] Load technical-patterns.md
-  - [ ] Detect and load subsystem context
-  - [ ] Combine into system prompt
-- [ ] Review execution
-  - [ ] Initialize conversation with system + user prompts
-  - [ ] Execute LLM with MCP tools available
-  - [ ] Handle tool calls in loop (LLM → tools → LLM → ...)
-  - [ ] Detect protocol completion
-  - [ ] Validate protocol requirements met
-- [ ] Response parsing
-  - [ ] Extract regressions count
-  - [ ] Extract patterns triggered
-  - [ ] Extract tokens used
-  - [ ] Validate output format
-- [ ] Write unit tests
-  - [ ] Test prompt construction
-  - [ ] Test review execution flow
-  - [ ] Test response parsing
+- [x] Implement `ReviewEngine` class
+  - [x] Method: `__init__(provider, mcp_client, prompts_loader)`
+  - [x] Method: `review_patch(patch_diff, metadata) -> ReviewResult`
+  - [x] Method: `build_system_prompt() -> str`
+  - [x] Method: `build_user_prompt(patch_diff) -> str`
+  - [x] Method: `execute_review_protocol() -> ReviewResult`
+  - [x] Method: `parse_review_response(llm_response) -> ReviewResult`
+- [x] System prompt construction
+  - [x] Load review-core.md
+  - [x] Load technical-patterns.md
+  - [x] Detect and load subsystem context
+  - [x] Combine into system prompt
+- [x] Review execution
+  - [x] Initialize conversation with system + user prompts
+  - [x] Execute LLM with MCP tools available
+  - [x] Handle tool calls in loop (LLM → tools → LLM → ...)
+  - [x] Detect protocol completion
+  - [x] Validate protocol requirements met
+- [x] Response parsing
+  - [x] Extract regressions count
+  - [x] Extract patterns triggered
+  - [x] Extract tokens used
+  - [x] Validate output format
+- [x] Write unit tests
+  - [x] Test prompt construction
+  - [x] Test review execution flow
+  - [x] Test response parsing
 
 #### 3.3 Output Formatter (src/b4/review_formatter.py)
 - [ ] Implement `format_inline(review_result, patch_metadata) -> str`
@@ -532,12 +532,13 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
 ## Current Status
 
 **Branch**: `ai-review`
-**Latest Commit**: `04cb49c` - llm: Add tool calling support for multi-turn conversations
-**Phase**: 1 (Week 2 - MCP Integration COMPLETE ✅)
+**Latest Commit**: TBD - review: Implement ReviewEngine core with autonomous review loop
+**Phase**: 1 (Week 3 - Review Protocol: 2/3 COMPLETE ✅)
 **Started**: 2025-11-18
 **Week 1 Completed**: 2025-11-18
 **Week 2 Completed**: 2025-11-19
-**Next**: Week 3 - Review Protocol Implementation
+**Week 3 Progress**: ReviewPromptsLoader + ReviewEngine complete with tests
+**Next**: Week 3.3 - Output Formatters (then Week 3.4 - End-to-End Test)
 
 ## Notes
 
