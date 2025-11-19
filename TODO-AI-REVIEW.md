@@ -29,11 +29,12 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
   - [x] Property: `name: str`
   - [x] Property: `model: str`
 - [x] Define message format dataclasses
-  - [x] `Message(role: str, content: str)`
+  - [x] `Message(role: str, content: str, tool_calls: list, tool_call_id: str)`
   - [x] `ToolCall(id: str, name: str, arguments: dict)`
   - [x] `ToolResult(id: str, result: str)`
 - [x] Define response format
   - [x] `LLMResponse(content: str, tool_calls: list, finish_reason: str)`
+- [x] Add multi-turn conversation support with tool calls
 - [ ] Write unit tests for base classes
 
 #### 1.3 Ollama Provider (src/b4/llm/ollama.py)
@@ -47,6 +48,7 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
   - [x] Convert MCP tools to Ollama function calling format
   - [x] POST to `/api/chat` endpoint
   - [x] Parse response and extract tool calls
+  - [x] Add fallback JSON parsing for models without structured tool_calls
   - [x] Handle errors (connection, timeout, model not found)
 - [x] Implement `stream_generate()` method
   - [x] Stream responses from Ollama
@@ -171,6 +173,7 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
   - [x] Execute tool calls
   - [x] Return results to LLM
   - [x] Verify end-to-end flow (with mocks)
+  - [x] Test with real Ollama + semcode-mcp (qwen2.5-coder:7b)
 
 ### Week 3: Review Protocol
 
@@ -529,11 +532,12 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
 ## Current Status
 
 **Branch**: `ai-review`
-**Latest Commit**: `abc4098` - review: Add command registration and module skeleton
-**Phase**: 1 (Week 2 - MCP Integration COMPLETE)
+**Latest Commit**: `04cb49c` - llm: Add tool calling support for multi-turn conversations
+**Phase**: 1 (Week 2 - MCP Integration COMPLETE ✅)
 **Started**: 2025-11-18
 **Week 1 Completed**: 2025-11-18
-**Week 2 Completed**: 2025-11-18
+**Week 2 Completed**: 2025-11-19
+**Next**: Week 3 - Review Protocol Implementation
 
 ## Notes
 
