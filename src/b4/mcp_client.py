@@ -322,4 +322,5 @@ class SemcodeMCPClient:
 
     def __del__(self) -> None:
         """Cleanup on deletion."""
-        self._cleanup()
+        if hasattr(self, '_process'):
+            self._cleanup()
