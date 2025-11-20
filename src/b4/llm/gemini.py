@@ -287,6 +287,24 @@ class GeminiProvider(LLMProvider):
         # Send a minimal continuation prompt
         return chat_history, "Please continue based on the tool results above."
 
+    def _convert_proto_to_dict(self, obj: Any) -> Any:
+        """
+        Convert protobuf objects to plain Python types.
+
+        Gemini returns function arguments as protobuf objects (RepeatedComposite,
+        MapComposite) which aren't JSON serializable. Convert them recursively.
+        """
+        if isinstance(obj, dict):
+            return {k: self._convert_proto_to_dict(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self._convert_proto_to_dict(item) for item in obj]
+        elif hasattr(obj, 'items'):  # dict-like (protobuf MapComposite)
+            return {k: self._convert_proto_to_dict(v) for k, v in obj.items()}
+        elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes)):  # list-like (protobuf RepeatedComposite)
+            return [self._convert_proto_to_dict(item) for item in obj]
+        else:
+            return obj
+
     def _convert_to_gemini_tools(self, tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Convert tool format to Gemini function declarations.
@@ -316,18 +334,25 @@ class GeminiProvider(LLMProvider):
         content = ''
         tool_calls = []
 
-        # Extract text content
-        if response.text:
-            content = response.text
+        # Extract text content (only if no function_call)
+        # response.text throws ValueError if there's a function_call
+        try:
+            if response.text:
+                content = response.text
+        except ValueError:
+            # This happens when response contains function_call
+            pass
 
         # Extract function calls
         for part in response.parts:
             if hasattr(part, 'function_call') and part.function_call:
                 fc = part.function_call
+                # Convert protobuf args to plain dict (handles RepeatedComposite, etc.)
+                args_dict = self._convert_proto_to_dict(dict(fc.args))
                 tool_calls.append(ToolCall(
                     id=fc.name,  # Gemini doesn't provide IDs, use name
                     name=fc.name,
-                    arguments=dict(fc.args)
+                    arguments=args_dict
                 ))
 
         # Determine finish reason
@@ -373,10 +398,12 @@ class GeminiProvider(LLMProvider):
         for part in chunk.parts:
             if hasattr(part, 'function_call') and part.function_call:
                 fc = part.function_call
+                # Convert protobuf args to plain dict (handles RepeatedComposite, etc.)
+                args_dict = self._convert_proto_to_dict(dict(fc.args))
                 tool_calls.append(ToolCall(
                     id=fc.name,
                     name=fc.name,
-                    arguments=dict(fc.args)
+                    arguments=args_dict
                 ))
 
         return LLMResponse(

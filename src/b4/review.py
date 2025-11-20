@@ -66,7 +66,8 @@ class ReviewEngine:
         prompts_loader: ReviewPromptsLoader,
         verbose: bool = False,
         dump_conversation: bool = False,
-        stream: bool = False
+        stream: bool = False,
+        stream_output = None
     ):
         """
         Initialize review engine.
@@ -77,7 +78,8 @@ class ReviewEngine:
             prompts_loader: Review prompts loader
             verbose: Enable verbose output to show LLM interactions
             dump_conversation: Dump full prompts and responses to logs
-            stream: Stream LLM tokens in real-time (requires verbose=True)
+            stream: Stream LLM tokens in real-time
+            stream_output: Optional file object to write streaming output (default: sys.stdout)
         """
         self.provider = provider
         self.mcp_client = mcp_client
@@ -85,6 +87,7 @@ class ReviewEngine:
         self.verbose = verbose
         self.dump_conversation = dump_conversation
         self.stream = stream
+        self.stream_output = stream_output if stream_output is not None else sys.stdout
 
         # Convert MCP tools to provider format
         mcp_tools = mcp_client.get_tools()
@@ -267,22 +270,24 @@ class ReviewEngine:
             # Get LLM response
             logger.debug(f'Calling LLM with {len(messages)} messages')
 
-            if self.stream and self.verbose:
+            if self.stream:
                 # Stream tokens in real-time
-                print(f'   💬 LLM response: ', end='', flush=True)
+                if self.verbose:
+                    print(f'   💬 LLM response: ', end='', flush=True)
+
                 accumulated_content = ''
                 accumulated_tool_calls = []
                 last_response = None
 
                 for chunk in self.provider.stream_generate(messages, tools=self.tools):
                     if chunk.content:
-                        print(chunk.content, end='', flush=True)
+                        print(chunk.content, end='', flush=True, file=self.stream_output)
                         accumulated_content += chunk.content
                     if chunk.tool_calls:
                         accumulated_tool_calls.extend(chunk.tool_calls)
                     last_response = chunk
 
-                print()  # Newline after streaming
+                print(file=self.stream_output)  # Newline after streaming
 
                 # Create final response from accumulated chunks
                 from .llm.base import LLMResponse

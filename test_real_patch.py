@@ -16,6 +16,7 @@ from b4.llm.gemini import GeminiProvider
 from b4.mcp_client import SemcodeMCPClient
 from b4.review_prompts import ReviewPromptsLoader
 from b4.review import ReviewEngine
+from b4.review_formatter import format_inline, format_markdown, format_json
 
 
 def get_commit_info(commit_hash: str, kernel_dir: str) -> tuple[str, dict]:
@@ -108,13 +109,22 @@ def main():
     print(f"   ✅ Detected subsystems: {subsystems}")
 
     print("\n5. Creating ReviewEngine...")
-    # Enable debug logging to see everything
+    # Set logging to WARNING to reduce noise
     import logging
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=logging.WARNING, format='%(levelname)s: %(message)s')
 
-    engine = ReviewEngine(gemini, mcp, prompts, verbose=True, dump_conversation=True, stream=True)
+    # Open file for streaming output (unbuffered)
+    stream_file = open('review-stream.log', 'w', buffering=1)  # Line buffering
+
+    engine = ReviewEngine(
+        gemini, mcp, prompts,
+        verbose=False,
+        dump_conversation=False,
+        stream=True,
+        stream_output=stream_file
+    )
     print(f"   ✅ Engine initialized with {len(engine.tools)} tools")
-    print(f"   ℹ️  Verbose mode: ON + Full conversation logging + Streaming enabled")
+    print(f"   ℹ️  Streaming output will be written to review-stream.log")
 
     # Build prompts (just to see sizes)
     system_prompt = engine.build_system_prompt(diff)
@@ -131,6 +141,9 @@ def main():
 
     result = engine.review_patch(diff, metadata)
 
+    # Close stream file
+    stream_file.close()
+
     # Display results
     print("\n" + "=" * 70)
     print("REVIEW RESULTS")
@@ -142,10 +155,66 @@ def main():
     print(f"   - Tokens used: {result.tokens_used:,}")
     print(f"   - Analysis time: {result.analysis_time:.1f}s")
 
-    print(f"\n📝 Full Review Text:")
+    # Calculate tokens per second
+    if result.analysis_time > 0:
+        tokens_per_sec = result.tokens_used / result.analysis_time
+        print(f"   - Throughput: {tokens_per_sec:.1f} tokens/sec")
+
+    print(f"\n📝 Raw Review Text:")
     print("-" * 70)
     print(result.review_text)
     print("-" * 70)
+
+    # Test all three output formatters
+    print("\n" + "=" * 70)
+    print("OUTPUT FORMATTERS TEST")
+    print("=" * 70)
+
+    print("\n8. Testing inline format (email-style)...")
+    inline_output = format_inline(result)
+    inline_file = 'review-inline.txt'
+    with open(inline_file, 'w') as f:
+        f.write(inline_output)
+    print(f"   ✅ Generated {inline_file} ({len(inline_output):,} chars)")
+    print(f"   Preview (first 500 chars):")
+    print("   " + "\n   ".join(inline_output[:500].split('\n')))
+
+    print("\n9. Testing markdown format...")
+    markdown_output = format_markdown(result)
+    markdown_file = 'review-report.md'
+    with open(markdown_file, 'w') as f:
+        f.write(markdown_output)
+    print(f"   ✅ Generated {markdown_file} ({len(markdown_output):,} chars)")
+
+    print("\n10. Testing JSON format...")
+    json_output = format_json(result, pretty=True)
+    json_file = 'review-result.json'
+    with open(json_file, 'w') as f:
+        f.write(json_output)
+    print(f"   ✅ Generated {json_file} ({len(json_output):,} chars)")
+
+    # Parse JSON to verify structure
+    import json
+    parsed = json.loads(json_output)
+    print(f"   ✅ JSON validation: {len(parsed)} top-level keys")
+    print(f"      - review.regressions_found: {parsed['review']['regressions_found']}")
+    print(f"      - review.patterns_triggered: {len(parsed['review']['patterns_triggered'])} patterns")
+
+    # Performance summary
+    print("\n" + "=" * 70)
+    print("PERFORMANCE BENCHMARK")
+    print("=" * 70)
+    print(f"\n📈 Review Performance:")
+    print(f"   - Total time: {result.analysis_time:.1f}s ({result.analysis_time/60:.1f} minutes)")
+    print(f"   - Total tokens: {result.tokens_used:,}")
+    print(f"   - Throughput: {tokens_per_sec:.1f} tokens/sec")
+    print(f"   - Context size: {len(system_prompt) + len(user_prompt):,} chars")
+
+    print(f"\n📦 Output Files Generated:")
+    print(f"   - review-stream.log - LLM streaming output")
+    print(f"   - {inline_file} - Email-style review")
+    print(f"   - {markdown_file} - Markdown report")
+    print(f"   - {json_file} - JSON data")
 
     # Cleanup
     mcp.disconnect()
