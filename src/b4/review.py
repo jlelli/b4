@@ -17,7 +17,12 @@ import b4
 from .llm.base import LLMProvider, Message
 from .mcp_client import SemcodeMCPClient
 from .review_prompts import ReviewPromptsLoader
-from .tool_bridge import convert_mcp_to_ollama_tools, execute_tool_calls
+from .tool_bridge import (
+    convert_mcp_to_ollama_tools,
+    convert_mcp_to_anthropic_tools,
+    convert_mcp_to_gemini_tools,
+    execute_tool_calls
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +88,20 @@ class ReviewEngine:
 
         # Convert MCP tools to provider format
         mcp_tools = mcp_client.get_tools()
-        # TODO: Support other providers
-        self.tools = convert_mcp_to_ollama_tools(mcp_tools)
+        provider_name = provider.name.lower()
 
-        logger.info(f'ReviewEngine initialized with {len(self.tools)} tools')
+        if provider_name == 'ollama':
+            self.tools = convert_mcp_to_ollama_tools(mcp_tools)
+        elif provider_name == 'gemini':
+            self.tools = convert_mcp_to_gemini_tools(mcp_tools)
+        elif provider_name == 'anthropic':
+            self.tools = convert_mcp_to_anthropic_tools(mcp_tools)
+        else:
+            # Default to Ollama format (OpenAI-compatible)
+            logger.warning(f'Unknown provider {provider_name}, defaulting to Ollama tool format')
+            self.tools = convert_mcp_to_ollama_tools(mcp_tools)
+
+        logger.info(f'ReviewEngine initialized with {len(self.tools)} tools for {provider_name}')
 
     def review_patch(
         self,

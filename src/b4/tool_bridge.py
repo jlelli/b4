@@ -85,17 +85,67 @@ def convert_mcp_to_gemini_tools(mcp_tools: Dict[str, Dict[str, Any]]) -> List[Di
 
     for tool_name, tool_schema in mcp_tools.items():
         # Gemini uses function declarations
+        params = _convert_mcp_params_to_json_schema(
+            tool_schema.get('inputSchema', {})
+        )
+        # Clean schema for Gemini (remove unsupported fields)
+        params = _clean_schema_for_gemini(params)
+
         gemini_tool = {
             'name': tool_name,
             'description': tool_schema.get('description', ''),
-            'parameters': _convert_mcp_params_to_json_schema(
-                tool_schema.get('inputSchema', {})
-            )
+            'parameters': params
         }
         gemini_tools.append(gemini_tool)
 
     logger.debug(f'Converted {len(gemini_tools)} MCP tools to Gemini format')
     return gemini_tools
+
+
+def _clean_schema_for_gemini(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Clean JSON Schema for Gemini API compatibility.
+
+    Gemini only supports specific fields from JSON Schema.
+    This function keeps only supported fields and recursively cleans nested schemas.
+
+    Supported fields (from google.ai.generativelanguage_v1beta.types.Schema):
+    - type, format, description, nullable, enum, items, max_items, min_items, properties, required
+
+    Args:
+        schema: JSON Schema dict
+
+    Returns:
+        Cleaned schema dict with only Gemini-supported fields
+    """
+    # Fields that Gemini DOES support (allowlist approach is safer)
+    SUPPORTED_FIELDS = {
+        'type', 'format', 'description', 'nullable', 'enum',
+        'items', 'max_items', 'min_items', 'properties', 'required'
+    }
+
+    if not isinstance(schema, dict):
+        return schema
+
+    # Create a cleaned copy with only supported fields
+    cleaned = {}
+    for key, value in schema.items():
+        # Skip unsupported fields
+        if key not in SUPPORTED_FIELDS:
+            continue
+
+        # Recursively clean nested schemas
+        if key == 'properties' and isinstance(value, dict):
+            cleaned[key] = {
+                prop_name: _clean_schema_for_gemini(prop_schema)
+                for prop_name, prop_schema in value.items()
+            }
+        elif key == 'items' and isinstance(value, dict):
+            cleaned[key] = _clean_schema_for_gemini(value)
+        else:
+            cleaned[key] = value
+
+    return cleaned
 
 
 def _convert_mcp_params_to_json_schema(input_schema: Dict[str, Any]) -> Dict[str, Any]:

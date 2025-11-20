@@ -12,7 +12,7 @@ import os
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from b4.llm.ollama import OllamaProvider
+from b4.llm.gemini import GeminiProvider
 from b4.mcp_client import SemcodeMCPClient
 from b4.review_prompts import ReviewPromptsLoader
 from b4.review import ReviewEngine
@@ -82,15 +82,13 @@ def main():
     print(f"   ✅ Diff size: {len(diff)} chars")
 
     # Initialize components
-    print("\n2. Initializing Ollama provider...")
-    ollama = OllamaProvider({
-        'url': 'http://localhost:11434',
-        'model': 'qwen2.5-coder:1.5b',  # Smaller/faster model for testing
-        'timeout': 300,  # Should be much faster
-        'num_ctx': 16384  # Increase context window to avoid truncation
+    print("\n2. Initializing Gemini provider...")
+    gemini = GeminiProvider({
+        'model': 'gemini-2.5-flash',  # Stable Gemini 2.5 Flash
+        'temperature': 0.1,
+        'timeout': 300
     })
-    print(f"   ✅ Provider: {ollama.name} / {ollama.model}")
-    print(f"   ✅ Context window: 16384 tokens")
+    print(f"   ✅ Provider: {gemini.name} / {gemini.model}")
 
     print("\n3. Initializing MCP client...")
     mcp = SemcodeMCPClient(
@@ -114,7 +112,7 @@ def main():
     import logging
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-    engine = ReviewEngine(ollama, mcp, prompts, verbose=True, dump_conversation=True, stream=True)
+    engine = ReviewEngine(gemini, mcp, prompts, verbose=True, dump_conversation=True, stream=True)
     print(f"   ✅ Engine initialized with {len(engine.tools)} tools")
     print(f"   ℹ️  Verbose mode: ON + Full conversation logging + Streaming enabled")
 
