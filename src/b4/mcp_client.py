@@ -211,16 +211,36 @@ class SemcodeMCPClient:
             self._process.stdin.write(request_json)
             self._process.stdin.flush()
 
-            # Read response
-            response_line = self._process.stdout.readline()
-            if not response_line:
-                raise MCPConnectionError('No response from semcode-mcp')
+            # Read response - skip non-JSON lines (debug output, etc.)
+            # Semcode-mcp may output debug messages before the JSON-RPC response
+            max_attempts = 100  # Prevent infinite loop
+            for attempt in range(max_attempts):
+                response_line = self._process.stdout.readline()
+                if not response_line:
+                    raise MCPConnectionError('No response from semcode-mcp (EOF)')
 
-            response = json.loads(response_line)
-            return response
+                # Skip empty lines
+                response_line = response_line.strip()
+                if not response_line:
+                    continue
 
-        except json.JSONDecodeError as e:
-            raise MCPConnectionError(f'Invalid JSON from semcode-mcp: {e}') from e
+                # Try to parse as JSON
+                try:
+                    response = json.loads(response_line)
+                    # Valid JSON-RPC response should have 'jsonrpc' or 'id' field
+                    if 'jsonrpc' in response or 'id' in response:
+                        return response
+                    # Otherwise it's some other JSON (debug?), keep looking
+                    logger.debug(f'Skipping non-JSON-RPC line: {response_line[:100]}')
+                except json.JSONDecodeError:
+                    # Not JSON, likely debug output - skip it
+                    logger.debug(f'Skipping non-JSON line: {response_line[:100]}')
+                    continue
+
+            raise MCPConnectionError(f'No valid JSON-RPC response after {max_attempts} lines')
+
+        except MCPConnectionError:
+            raise
         except Exception as e:
             raise MCPConnectionError(f'Communication error: {e}') from e
 
