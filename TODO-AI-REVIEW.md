@@ -290,20 +290,25 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
   - [ ] Configure max tokens, timeout
 - [ ] Write unit tests (with mocked API)
 
-#### 4.2 Gemini Provider (src/b4/llm/gemini.py)
-- [ ] Implement `GeminiProvider(LLMProvider)`
-- [ ] Install Gemini SDK
-  - [ ] Add to optional deps: `google-generativeai`
-- [ ] Implement `generate()` method
-  - [ ] Use Google Generative AI API
-  - [ ] Convert MCP tools to Gemini function format
-  - [ ] Parse responses
-- [ ] Implement `stream_generate()` method
-- [ ] API key management
-  - [ ] Load from `GEMINI_API_KEY` env var
-- [ ] Configuration
-  - [ ] Read `b4-review-gemini.*` config
-  - [ ] Default model: gemini-2.0-flash-exp
+#### 4.2 Gemini Provider (src/b4/llm/gemini.py) ✅ COMPLETED EARLY
+- [x] Implement `GeminiProvider(LLMProvider)`
+- [x] Install Gemini SDK
+  - [x] Add to optional deps: `google-generativeai`
+- [x] Implement `generate()` method
+  - [x] Use Google Generative AI API
+  - [x] Convert MCP tools to Gemini function format
+  - [x] Clean schemas for Gemini compatibility (allowlist approach)
+  - [x] Parse responses
+- [x] Implement `stream_generate()` method
+  - [x] Handle streaming chunks with function_call ValueError
+- [x] API key management
+  - [x] Load from `GEMINI_API_KEY` env var
+- [x] Configuration
+  - [x] Read `b4-review-gemini.*` config
+  - [x] Default model: gemini-2.5-flash (changed from gemini-2.0-flash-exp due to rate limits)
+  - [x] Disable safety filters for code review
+- [x] Fix MCP client JSON parsing to handle debug output
+- [x] Test with real kernel patch (e0367ffa5955) - 8 autonomous turns successful
 - [ ] Write unit tests
 
 #### 4.3 Provider Factory
@@ -532,13 +537,18 @@ See DESIGN-AI-REVIEW.md for architecture and design details.
 ## Current Status
 
 **Branch**: `ai-review`
-**Latest Commit**: TBD - review: Implement ReviewEngine core with autonomous review loop
-**Phase**: 1 (Week 3 - Review Protocol: 2/3 COMPLETE ✅)
+**Latest Commit**: a41c088 - review: Add autonomous review engine with streaming and verbose modes
+**Phase**: 1 (Week 3 - Review Protocol: IN PROGRESS)
 **Started**: 2025-11-18
-**Week 1 Completed**: 2025-11-18
-**Week 2 Completed**: 2025-11-19
-**Week 3 Progress**: ReviewPromptsLoader + ReviewEngine complete with tests
-**Next**: Week 3.3 - Output Formatters (then Week 3.4 - End-to-End Test)
+**Week 1 Completed**: 2025-11-18 ✅
+**Week 2 Completed**: 2025-11-19 ✅
+**Week 3 Progress**:
+  - ✅ 3.1 ReviewPromptsLoader complete with tests
+  - ✅ 3.2 ReviewEngine complete with tests + end-to-end validation
+  - 🚧 3.3 Output Formatters - IN PROGRESS
+  - ⏳ 3.4 End-to-End Test - Basic test complete, formal test pending
+**Bonus**: Week 4.2 Gemini Provider completed early (2025-11-20) ✅
+**Next**: Finish Week 3.3 Output Formatters to complete Phase 1
 
 ## Notes
 
