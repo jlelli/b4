@@ -49,12 +49,14 @@ class OllamaProvider(LLMProvider):
                 - model: Model name (default: qwen2.5-coder:7b)
                 - timeout: Request timeout in seconds (default: 300)
                 - max_retries: Maximum retry attempts (default: 3)
+                - num_ctx: Context window size in tokens (default: 8192)
         """
         super().__init__(config)
         self._url = config.get('url', self.DEFAULT_URL).rstrip('/')
         self._model = config.get('model', self.DEFAULT_MODEL)
         self._timeout = config.get('timeout', self.DEFAULT_TIMEOUT)
         self._max_retries = config.get('max_retries', self.DEFAULT_MAX_RETRIES)
+        self._num_ctx = config.get('num_ctx', 8192)  # Default to 8192 tokens
 
         # Create HTTP client
         self._client = httpx.Client(
@@ -213,12 +215,18 @@ class OllamaProvider(LLMProvider):
         if tools:
             payload['tools'] = tools
 
+        # Initialize options dict
+        payload['options'] = payload.get('options', {})
+
+        # Set context window size from config or kwargs
+        # This prevents prompt truncation warnings
+        num_ctx = kwargs.get('num_ctx', self._num_ctx)
+        payload['options']['num_ctx'] = num_ctx
+
         # Add optional parameters
         if 'temperature' in kwargs:
-            payload['options'] = payload.get('options', {})
             payload['options']['temperature'] = kwargs['temperature']
         if 'top_p' in kwargs:
-            payload['options'] = payload.get('options', {})
             payload['options']['top_p'] = kwargs['top_p']
 
         return payload
@@ -238,23 +246,64 @@ class OllamaProvider(LLMProvider):
                     name=tc['function']['name'],
                     arguments=tc['function'].get('arguments', {})
                 ))
-        elif content and content.strip().startswith('{'):
+        elif content:
             # Fallback: Some models return tool calls as JSON in content
-            # instead of using structured tool_calls format
-            try:
-                tool_call_json = json.loads(content.strip())
-                if 'name' in tool_call_json and 'arguments' in tool_call_json:
-                    tool_calls.append(ToolCall(
-                        id=f"call_0",
-                        name=tool_call_json['name'],
-                        arguments=tool_call_json['arguments']
-                    ))
-                    # Clear content since it was a tool call, not text
+            # instead of using structured tool_calls format.
+            # Handle both raw JSON and markdown-wrapped JSON
+
+            # Strip markdown code blocks if present
+            stripped_content = content.strip()
+            if stripped_content.startswith('```'):
+                # Extract content between code fences
+                lines = stripped_content.split('\n')
+                # Skip first line (```json or ```)
+                lines = lines[1:]
+                # Find closing fence
+                try:
+                    end_idx = lines.index('```')
+                    stripped_content = '\n'.join(lines[:end_idx])
+                except ValueError:
+                    # No closing fence, use everything after first line
+                    stripped_content = '\n'.join(lines)
+
+            # Now try parsing if it looks like JSON
+            if stripped_content.strip().startswith('{'):
+                parsed_any = False
+
+                # Strategy 1: Try parsing the entire content as one JSON object
+                try:
+                    tool_call_json = json.loads(stripped_content.strip())
+                    if 'name' in tool_call_json and 'arguments' in tool_call_json:
+                        tool_calls.append(ToolCall(
+                            id=f"call_{len(tool_calls)}",
+                            name=tool_call_json['name'],
+                            arguments=tool_call_json['arguments']
+                        ))
+                        parsed_any = True
+                        logger.debug(f'Parsed single tool call from JSON content: {tool_call_json["name"]}')
+                except (json.JSONDecodeError, KeyError):
+                    # Strategy 2: Try parsing each line separately
+                    for line in stripped_content.strip().split('\n'):
+                        line = line.strip()
+                        if not line or not line.startswith('{'):
+                            continue
+
+                        try:
+                            tool_call_json = json.loads(line)
+                            if 'name' in tool_call_json and 'arguments' in tool_call_json:
+                                tool_calls.append(ToolCall(
+                                    id=f"call_{len(tool_calls)}",
+                                    name=tool_call_json['name'],
+                                    arguments=tool_call_json['arguments']
+                                ))
+                                parsed_any = True
+                                logger.debug(f'Parsed tool call from JSON line: {tool_call_json["name"]}')
+                        except (json.JSONDecodeError, KeyError) as e:
+                            logger.debug(f'Failed to parse line as tool call: {e}')
+
+                # If we successfully parsed tool calls, clear the content
+                if parsed_any:
                     content = ''
-                    logger.debug(f'Parsed tool call from JSON content: {tool_call_json["name"]}')
-            except (json.JSONDecodeError, KeyError) as e:
-                # Not a valid tool call JSON, treat as regular content
-                logger.debug(f'Content looks like JSON but failed to parse as tool call: {e}')
 
         # Determine finish reason
         finish_reason = 'stop'

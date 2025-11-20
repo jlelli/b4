@@ -148,6 +148,17 @@ def execute_tool_call(
     logger.info(f'Executing tool: {tool_call.name}')
     logger.debug(f'Arguments: {tool_call.arguments}')
 
+    # Validate that the tool exists
+    available_tools = mcp_client.get_tools()
+    if tool_call.name not in available_tools:
+        logger.warning(f'Unknown tool: {tool_call.name}')
+        avail_names = ', '.join(sorted(available_tools.keys()))
+        return ToolResult(
+            tool_call_id=tool_call.id,
+            result=f'Unknown tool: {tool_call.name}. Available tools: {avail_names}',
+            is_error=True
+        )
+
     try:
         # Invoke tool via MCP
         result = mcp_client.invoke_tool(tool_call.name, tool_call.arguments)

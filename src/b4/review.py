@@ -58,7 +58,10 @@ class ReviewEngine:
         self,
         provider: LLMProvider,
         mcp_client: SemcodeMCPClient,
-        prompts_loader: ReviewPromptsLoader
+        prompts_loader: ReviewPromptsLoader,
+        verbose: bool = False,
+        dump_conversation: bool = False,
+        stream: bool = False
     ):
         """
         Initialize review engine.
@@ -67,10 +70,16 @@ class ReviewEngine:
             provider: LLM provider (Ollama, Anthropic, Gemini)
             mcp_client: Connected MCP client for semcode tools
             prompts_loader: Review prompts loader
+            verbose: Enable verbose output to show LLM interactions
+            dump_conversation: Dump full prompts and responses to logs
+            stream: Stream LLM tokens in real-time (requires verbose=True)
         """
         self.provider = provider
         self.mcp_client = mcp_client
         self.prompts_loader = prompts_loader
+        self.verbose = verbose
+        self.dump_conversation = dump_conversation
+        self.stream = stream
 
         # Convert MCP tools to provider format
         mcp_tools = mcp_client.get_tools()
@@ -217,8 +226,74 @@ class ReviewEngine:
             turn += 1
             logger.debug(f'Review turn {turn}/{max_turns}')
 
+            if self.verbose:
+                print(f'\n🔄 Turn {turn}/{max_turns}: Waiting for LLM response...')
+                # Show last user/system message for context
+                if turn == 1:
+                    print(f'   📋 System prompt: {len(messages[0].content)} chars')
+                    print(f'   📋 User prompt: {len(messages[1].content)} chars')
+                elif len(messages) > 0:
+                    last_msg = messages[-1]
+                    if last_msg.role == 'tool':
+                        print(f'   📋 Sending tool result: {len(last_msg.content)} chars')
+
+            # Dump full conversation if requested
+            if self.dump_conversation:
+                logger.info(f'=== TURN {turn} REQUEST ===')
+                for i, msg in enumerate(messages):
+                    logger.info(f'Message {i+1} [{msg.role}]:')
+                    if msg.content:
+                        # Truncate very long content
+                        content_preview = msg.content[:500] + '...' if len(msg.content) > 500 else msg.content
+                        logger.info(f'{content_preview}')
+                    if msg.tool_calls:
+                        logger.info(f'Tool calls: {[tc.name for tc in msg.tool_calls]}')
+
             # Get LLM response
-            response = self.provider.generate(messages, tools=self.tools)
+            logger.debug(f'Calling LLM with {len(messages)} messages')
+
+            if self.stream and self.verbose:
+                # Stream tokens in real-time
+                print(f'   💬 LLM response: ', end='', flush=True)
+                accumulated_content = ''
+                accumulated_tool_calls = []
+                last_response = None
+
+                for chunk in self.provider.stream_generate(messages, tools=self.tools):
+                    if chunk.content:
+                        print(chunk.content, end='', flush=True)
+                        accumulated_content += chunk.content
+                    if chunk.tool_calls:
+                        accumulated_tool_calls.extend(chunk.tool_calls)
+                    last_response = chunk
+
+                print()  # Newline after streaming
+
+                # Create final response from accumulated chunks
+                from .llm.base import LLMResponse
+                response = LLMResponse(
+                    content=accumulated_content if accumulated_content else None,
+                    tool_calls=accumulated_tool_calls,
+                    finish_reason=last_response.finish_reason if last_response else 'stop',
+                    tokens_used=last_response.tokens_used if last_response else 0,
+                    model=self.provider.model
+                )
+            else:
+                # Non-streaming mode
+                response = self.provider.generate(messages, tools=self.tools)
+
+            logger.debug(f'LLM responded with finish_reason={response.finish_reason}')
+
+            # Dump LLM response if requested
+            if self.dump_conversation:
+                logger.info(f'=== TURN {turn} RESPONSE ===')
+                logger.info(f'Finish reason: {response.finish_reason}')
+                logger.info(f'Tokens used: {response.tokens_used}')
+                if response.content:
+                    logger.info(f'Content: {response.content}')
+                if response.tool_calls:
+                    logger.info(f'Tool calls: {[(tc.name, tc.arguments) for tc in response.tool_calls]}')
+                logger.info('=' * 50)
 
             if response.tokens_used:
                 total_tokens += response.tokens_used
@@ -227,11 +302,19 @@ class ReviewEngine:
             if response.finish_reason == 'stop' and not response.has_tool_calls:
                 # LLM finished without tool calls - review complete
                 logger.info(f'Review completed in {turn} turns')
+                if self.verbose:
+                    print(f'✅ Review complete! ({total_tokens} tokens used)')
                 return self.parse_review_response(response, total_tokens)
 
             # Execute tool calls if present
             if response.has_tool_calls:
                 logger.info(f'Turn {turn}: Executing {len(response.tool_calls)} tool call(s)')
+
+                if self.verbose:
+                    print(f'🔧 LLM requested {len(response.tool_calls)} tool call(s):')
+                    for i, tc in enumerate(response.tool_calls, 1):
+                        args_str = ', '.join(f'{k}={v}' for k, v in tc.arguments.items())
+                        print(f'   {i}. {tc.name}({args_str})')
 
                 # Add assistant message with tool calls
                 messages.append(Message(
@@ -243,7 +326,13 @@ class ReviewEngine:
                 # Execute tools and add results
                 tool_results = execute_tool_calls(response.tool_calls, self.mcp_client)
 
-                for result in tool_results:
+                for i, result in enumerate(tool_results, 1):
+                    if self.verbose:
+                        if result.is_error:
+                            print(f'   ❌ Tool {i} failed: {result.result[:100]}...')
+                        else:
+                            print(f'   ✅ Tool {i} succeeded ({len(result.result)} chars)')
+
                     messages.append(Message(
                         role='tool',
                         content=result.result,
