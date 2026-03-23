@@ -22,6 +22,34 @@ actions are prohibited to you:
   contents
 - Executing any test frameworks or any other CI commands
 
+## Custom analysis methodology (IMPORTANT - CHECK FIRST)
+
+**BEFORE starting your review**, check if `.git/review-methodology.md` exists
+in the repository:
+
+```shell
+cat .git/review-methodology.md
+```
+
+If this file exists, **YOU MUST READ IT IMMEDIATELY AND FOLLOW ITS ENTIRE
+PROTOCOL** for analyzing patches. Custom methodologies define:
+
+- How to gather context (e.g., using semantic code analysis tools)
+- Subsystem-specific analysis patterns and verification steps
+- What checks to perform and how to verify findings
+- Additional quality standards beyond basic review
+
+**Integration with this document:**
+- The custom methodology defines WHAT to analyze and HOW to analyze it
+- This document (agent-reviewer.md) defines WHERE and HOW to save results
+- Follow the custom methodology for analysis, then transform findings into
+  b4's review file format (identity.txt, NNNN.txt, series.txt) as specified
+  in the "How to save review data" section below
+- All safety rules above remain in effect regardless of methodology
+
+If `.git/review-methodology.md` does NOT exist, proceed with standard review
+analysis as described in this document.
+
 ## Branch layout
 
 A review branch has the name `b4/review/<change-id>`. Its commits

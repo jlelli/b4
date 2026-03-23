@@ -1106,6 +1106,32 @@ for your project. A sample prompt is included in
 repository and adapt it to your project's coding standards and review
 guidelines.
 
+**Customising the analysis methodology**
+
+The stock ``agent-reviewer.md`` prompt defines the output format and
+safety rules, but you can augment it with your own analysis methodology
+by creating ``.git/review-methodology.md`` in your kernel tree.
+
+When this file exists, the agent will load and follow it before writing
+review files. This allows you to:
+
+* Define deep context-gathering steps (e.g., using semantic code analysis)
+* Specify subsystem-specific analysis patterns
+* Add verification and false-positive elimination procedures
+* Enforce additional quality standards
+
+The custom methodology defines **what** to analyze and **how** to verify
+findings; ``agent-reviewer.md`` defines **where** and **how** to save
+results in the b4 format.
+
+For example, you can create a symlink to your existing review prompts::
+
+    ln -s ~/review-prompts/kernel/review-core.md \\
+          .git/review-methodology.md
+
+Or create a custom methodology file directly in ``.git/``. The agent
+will automatically detect and use it when reviewing patches.
+
 .. _customising_theme:
 
 Customising the colour theme
